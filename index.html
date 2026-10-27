@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance Manajemen - Web Portal Gateway</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            gold: '#FFB300',
+                            dark: '#121826',
+                            card: '#1E293B',
+                            primary: '#1976D2',
+                            success: '#2E7D32',
+                            danger: '#D32F2F',
+                            warning: '#ED6C02'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950">
+
+    <!-- Background Decoration -->
+    <div class="fixed inset-0 pointer-events-none opacity-20 overflow-hidden">
+        <div class="absolute -top-40 -left-40 w-96 h-96 bg-amber-500 rounded-full blur-3xl"></div>
+        <div class="absolute top-1/2 -right-40 w-96 h-96 bg-blue-600 rounded-full blur-3xl"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="relative z-10 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-slate-950 text-xl font-extrabold shadow-lg shadow-amber-500/20">
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-white tracking-wide">MAINTENANCE MANAJEMEN</h1>
+                <p class="text-xs text-amber-400 font-medium">Web Panel System v2.0</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2 text-xs text-slate-400 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Real-time Firebase Sync Active</span>
+        </div>
+    </header>
+
+    <!-- Main Content Gateway -->
+    <main class="relative z-10 max-w-6xl mx-auto px-6 py-12 flex-grow flex flex-col items-center justify-center">
+
+        <div class="text-center mb-12">
+            <span class="px-4 py-1.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30 uppercase tracking-widest">Pilih Portal Login Web</span>
+            <h2 class="text-3xl sm:text-5xl font-extrabold text-white mt-4 tracking-tight">Pusat Kendali Operasional Perawatan</h2>
+            <p class="text-slate-400 max-w-2xl mx-auto mt-3 text-sm sm:text-base">Akses sistem manajemen perawatan unit, ketersediaan part ready area, dan alokasi tim mekanik secara real-time langsung dari komputer.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
+
+            <!-- Admin Portal Card -->
+            <a href="admin.html" class="group relative bg-slate-900/90 border border-slate-800 hover:border-amber-500/50 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-amber-500/10 flex flex-col justify-between overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all"></div>
+                <div>
+                    <div class="w-14 h-14 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-2xl mb-6 border border-amber-500/30 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-user-gear"></i>
+                    </div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Pusat Kendali Full</span>
+                    <h3 class="text-2xl font-bold text-white mt-1 group-hover:text-amber-400 transition-colors">Admin Web Portal</h3>
+                    <p class="text-slate-400 text-xs sm:text-sm mt-3 leading-relaxed">
+                        Kelola order part, upload master Excel (Drag & Drop), manajemen user, edit data unit, dan reject order dengan alasan.
+                    </p>
+                </div>
+                <div class="mt-8 pt-4 border-t border-slate-800/80 flex items-center text-amber-400 font-semibold text-sm group-hover:translate-x-1 transition-transform">
+                    <span>Masuk ke Admin Portal</span>
+                    <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                </div>
+            </a>
+
+            <!-- Supervisor Portal Card -->
+            <a href="supervisor.html" class="group relative bg-slate-900/90 border border-slate-800 hover:border-blue-500/50 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-blue-500/10 flex flex-col justify-between overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
+                <div>
+                    <div class="w-14 h-14 bg-blue-500/20 text-blue-400 rounded-2xl flex items-center justify-center text-2xl mb-6 border border-blue-500/30 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-blue-400">Pengawasan Lapangan</span>
+                    <h3 class="text-2xl font-bold text-white mt-1 group-hover:text-blue-400 transition-colors">Supervisor Web Portal</h3>
+                    <p class="text-slate-400 text-xs sm:text-sm mt-3 leading-relaxed">
+                        Pantau statistik part per area (Smelter, EOS, KM15), tracking order, audit konflik, dan performa mekanik secara real-time.
+                    </p>
+                </div>
+                <div class="mt-8 pt-4 border-t border-slate-800/80 flex items-center text-blue-400 font-semibold text-sm group-hover:translate-x-1 transition-transform">
+                    <span>Masuk ke Supervisor Portal</span>
+                    <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                </div>
+            </a>
+
+            <!-- Mechanic Portal Card -->
+            <a href="mechanic.html" class="group relative bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-emerald-500/10 flex flex-col justify-between overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all"></div>
+                <div>
+                    <div class="w-14 h-14 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center text-2xl mb-6 border border-emerald-500/30 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-wrench"></i>
+                    </div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Pengerjaan & Cover Unit</span>
+                    <h3 class="text-2xl font-bold text-white mt-1 group-hover:text-emerald-400 transition-colors">Mechanic Web Portal</h3>
+                    <p class="text-slate-400 text-xs sm:text-sm mt-3 leading-relaxed">
+                        Pantau stok part ready di area (Smelter, EOS, KM15), lapor servis selesai, serta bantu lapor servis unit teman/mekanik lain yang sedang busy atau cuti.
+                    </p>
+                </div>
+                <div class="mt-8 pt-4 border-t border-slate-800/80 flex items-center text-emerald-400 font-semibold text-sm group-hover:translate-x-1 transition-transform">
+                    <span>Masuk ke Mechanic Portal</span>
+                    <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                </div>
+            </a>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-10 border-t border-slate-800/60 py-6 text-center text-xs text-slate-500">
+        <p>© 2026 Maintenance Manajemen App. Developed by Alif.</p>
+    </footer>
+
+</body>
+</html>
