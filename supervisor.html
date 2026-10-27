@@ -308,17 +308,45 @@
                     document.getElementById('single-unit-hm').value = unit.currentHM || 0;
                     document.getElementById('single-unit-handling').value = unit.warrantyHandlingType || 'INTERNAL';
 
+        window.openSingleUnitModal = function(unitId) {
+            document.getElementById('single-unit-doc-id').value = unitId || '';
+
+            const users = window.dbState.users || [];
+            const mechanics = users.filter(u => (u.role || '').toUpperCase() === 'MECHANIC');
+            const mechSelect = document.getElementById('single-unit-last-service-mechanic');
+            if (mechSelect) {
+                mechSelect.innerHTML = `<option value="">-- Pilih Mekanik --</option>` + mechanics.map(m => `<option value="${m.username || m.id}">${m.username || m.id} (${m.area || 'General'})</option>`).join('');
+            }
+
+            if (unitId) {
+                const fleet = window.dbState.excavators || [];
+                const unit = fleet.find(f => (f.hullNumber || f.id) === unitId);
+                if (unit) {
+                    document.getElementById('single-unit-hull').value = unit.hullNumber || unit.id || '';
+                    document.getElementById('single-unit-brand').value = unit.brand || 'SANY';
+                    document.getElementById('single-unit-model').value = unit.model || 'SY215C';
+                    document.getElementById('single-unit-sn').value = unit.serialNumber || '';
+                    document.getElementById('single-unit-customer').value = unit.customerName || '';
+                    document.getElementById('single-unit-company').value = unit.companyName || '';
+                    document.getElementById('single-unit-phone').value = unit.customerPhone || '';
+                    document.getElementById('single-unit-warranty-date').value = unit.warrantyEndDate || '01/01/2028';
+                    document.getElementById('single-unit-hm').value = unit.currentHM || 0;
+                    document.getElementById('single-unit-handling').value = unit.warrantyHandlingType || 'INTERNAL';
+
                     const sInfo = window.getUnitLastServiceInfo(unit, window.dbState.history);
                     document.getElementById('single-unit-last-service-date').value = sInfo.dateStr !== 'Belum Servis' && sInfo.dateStr !== '-' ? sInfo.dateStr : '';
                     document.getElementById('single-unit-last-service-type').value = sInfo.typeStr !== '-' ? sInfo.typeStr : '';
 
                     const unitHist = (window.dbState.history || []).filter(h => (h.hullNumber || h.id) === (unit.hullNumber || unit.id));
                     let lastHmVal = '';
+                    let lastMech = unit.assignedMechanicId || '';
                     if (unitHist.length > 0) {
                         let latest = unitHist.reduce((max, h) => (Number(h.date || h.timestamp || 0) > Number(max.date || max.timestamp || 0) ? h : max), unitHist[0]);
                         if (latest.hmAtService !== undefined) lastHmVal = latest.hmAtService;
+                        if (latest.mechanicId) lastMech = latest.mechanicId;
                     }
                     document.getElementById('single-unit-last-service-hm').value = lastHmVal;
+                    if (mechSelect) mechSelect.value = lastMech;
 
                     document.getElementById('single-unit-modal-title').innerHTML = `<i class="fa-solid fa-pen-to-square text-blue-500"></i><span>Edit Unit: ${unit.hullNumber || unitId}</span>`;
                 }
@@ -336,6 +364,7 @@
                 document.getElementById('single-unit-last-service-date').value = '';
                 document.getElementById('single-unit-last-service-hm').value = '';
                 document.getElementById('single-unit-last-service-type').value = '';
+                if (mechSelect) mechSelect.value = '';
                 document.getElementById('single-unit-modal-title').innerHTML = `<i class="fa-solid fa-truck-monster text-blue-500"></i><span>Tambah Unit Satuan</span>`;
             }
             document.getElementById('modal-single-unit').classList.remove('hidden');
@@ -360,6 +389,7 @@
             const lastServiceDateInput = document.getElementById('single-unit-last-service-date').value.trim();
             const lastServiceHmInput = parseFloat(document.getElementById('single-unit-last-service-hm').value) || 0;
             const lastServiceTypeInput = document.getElementById('single-unit-last-service-type').value.trim();
+            const lastServiceMechInput = document.getElementById('single-unit-last-service-mechanic')?.value.trim() || 'SUPERVISOR';
 
             if (!hull) {
                 alert('Harap isi Kode Unit / Lambung!');
@@ -387,7 +417,7 @@
 
             window.db.collection("excavators").doc(targetId).set(unitData, { merge: true })
                 .then(() => {
-                    if (lastServiceHmInput > 0 || lastServiceDateInput || lastServiceTypeInput) {
+                    if (lastServiceHmInput > 0 || lastServiceDateInput || lastServiceTypeInput || lastServiceMechInput) {
                         const histId = `record_${hull}_${Date.now()}`;
                         const histData = {
                             id: histId,
@@ -395,7 +425,11 @@
                             serviceType: lastServiceTypeInput || 'PM 500',
                             hmAtService: lastServiceHmInput > 0 ? lastServiceHmInput : hm,
                             date: lastServiceDateInput ? (window.parseDateRobustlyJS ? window.parseDateRobustlyJS(lastServiceDateInput)?.getTime() || Date.now() : Date.now()) : Date.now(),
-                            source: 'SUPERVISOR_MANUAL_EDIT',
+                            mechanicId: lastServiceMechInput,
+                            partsUsed: 'Gear / Engine / Hydraulic Oil & Filter',
+                            oilsUsed: 'Engine / Gear / Hydraulic Oil',
+                            notes: 'Manual Update via Edit Unit Modal',
+                            source: 'ADMIN_SUPERVISOR_EDIT',
                             isSync: true
                         };
                         window.db.collection("service_history").doc(histId).set(histData, { merge: true });
@@ -1143,6 +1177,12 @@
                 <div>
                     <label class="font-bold text-slate-300">Type Service Terakhir</label>
                     <input type="text" id="single-unit-last-service-type" placeholder="misal: PM 500" class="w-full mt-1 bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-3 focus:outline-none focus:border-blue-500 font-bold">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-300">Mekanik Servis Terakhir</label>
+                    <select id="single-unit-last-service-mechanic" class="w-full mt-1 bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-3 focus:outline-none focus:border-blue-500 font-bold cursor-pointer">
+                        <option value="">-- Pilih Mekanik --</option>
+                    </select>
                 </div>
             </div>
 
