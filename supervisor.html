@@ -307,6 +307,19 @@
                     document.getElementById('single-unit-warranty-date').value = unit.warrantyEndDate || '01/01/2028';
                     document.getElementById('single-unit-hm').value = unit.currentHM || 0;
                     document.getElementById('single-unit-handling').value = unit.warrantyHandlingType || 'INTERNAL';
+
+                    const sInfo = window.getUnitLastServiceInfo(unit, window.dbState.history);
+                    document.getElementById('single-unit-last-service-date').value = sInfo.dateStr !== 'Belum Servis' && sInfo.dateStr !== '-' ? sInfo.dateStr : '';
+                    document.getElementById('single-unit-last-service-type').value = sInfo.typeStr !== '-' ? sInfo.typeStr : '';
+
+                    const unitHist = (window.dbState.history || []).filter(h => (h.hullNumber || h.id) === (unit.hullNumber || unit.id));
+                    let lastHmVal = '';
+                    if (unitHist.length > 0) {
+                        let latest = unitHist.reduce((max, h) => (Number(h.date || h.timestamp || 0) > Number(max.date || max.timestamp || 0) ? h : max), unitHist[0]);
+                        if (latest.hmAtService !== undefined) lastHmVal = latest.hmAtService;
+                    }
+                    document.getElementById('single-unit-last-service-hm').value = lastHmVal;
+
                     document.getElementById('single-unit-modal-title').innerHTML = `<i class="fa-solid fa-pen-to-square text-blue-500"></i><span>Edit Unit: ${unit.hullNumber || unitId}</span>`;
                 }
             } else {
@@ -320,6 +333,9 @@
                 document.getElementById('single-unit-warranty-date').value = '01/01/2028';
                 document.getElementById('single-unit-hm').value = '0';
                 document.getElementById('single-unit-handling').value = 'INTERNAL';
+                document.getElementById('single-unit-last-service-date').value = '';
+                document.getElementById('single-unit-last-service-hm').value = '';
+                document.getElementById('single-unit-last-service-type').value = '';
                 document.getElementById('single-unit-modal-title').innerHTML = `<i class="fa-solid fa-truck-monster text-blue-500"></i><span>Tambah Unit Satuan</span>`;
             }
             document.getElementById('modal-single-unit').classList.remove('hidden');
@@ -341,6 +357,9 @@
             const warrantyDate = document.getElementById('single-unit-warranty-date').value.trim();
             const hm = parseFloat(document.getElementById('single-unit-hm').value) || 0;
             const handling = document.getElementById('single-unit-handling').value;
+            const lastServiceDateInput = document.getElementById('single-unit-last-service-date').value.trim();
+            const lastServiceHmInput = parseFloat(document.getElementById('single-unit-last-service-hm').value) || 0;
+            const lastServiceTypeInput = document.getElementById('single-unit-last-service-type').value.trim();
 
             if (!hull) {
                 alert('Harap isi Kode Unit / Lambung!');
@@ -368,6 +387,19 @@
 
             window.db.collection("excavators").doc(targetId).set(unitData, { merge: true })
                 .then(() => {
+                    if (lastServiceHmInput > 0 || lastServiceDateInput || lastServiceTypeInput) {
+                        const histId = `record_${hull}_${Date.now()}`;
+                        const histData = {
+                            id: histId,
+                            hullNumber: hull,
+                            serviceType: lastServiceTypeInput || 'PM 500',
+                            hmAtService: lastServiceHmInput > 0 ? lastServiceHmInput : hm,
+                            date: lastServiceDateInput ? (window.parseDateRobustlyJS ? window.parseDateRobustlyJS(lastServiceDateInput)?.getTime() || Date.now() : Date.now()) : Date.now(),
+                            source: 'SUPERVISOR_MANUAL_EDIT',
+                            isSync: true
+                        };
+                        window.db.collection("service_history").doc(histId).set(histData, { merge: true });
+                    }
                     window.showToast(`✅ Berhasil menyimpan unit ${hull}!`, "success");
                     window.closeSingleUnitModal();
                 })
@@ -1099,6 +1131,18 @@
                         <option value="INTERNAL">🔵 INTERNAL (Servis Tim)</option>
                         <option value="CUSTOMER_DIRECT">🟣 CUSTOMER DIRECT</option>
                     </select>
+                </div>
+                <div>
+                    <label class="font-bold text-slate-300">Tanggal Terakhir Service</label>
+                    <input type="text" id="single-unit-last-service-date" placeholder="misal: 01/01/2026" class="w-full mt-1 bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-3 focus:outline-none focus:border-blue-500 font-mono">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-300">HM Service Terakhir</label>
+                    <input type="number" step="0.1" id="single-unit-last-service-hm" placeholder="misal: 500" class="w-full mt-1 bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-3 focus:outline-none focus:border-blue-500 font-bold">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-300">Type Service Terakhir</label>
+                    <input type="text" id="single-unit-last-service-type" placeholder="misal: PM 500" class="w-full mt-1 bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-3 focus:outline-none focus:border-blue-500 font-bold">
                 </div>
             </div>
 
