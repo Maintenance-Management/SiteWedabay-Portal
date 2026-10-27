@@ -694,11 +694,25 @@
                         <table class="w-full text-left text-xs">
                             <thead class="bg-slate-950/80 text-slate-400 uppercase tracking-wider border-b border-slate-800 font-bold">
                                 <tr>
-                                    <th class="p-4">Kode Unit</th>
-                                    <th class="p-4">Serial Number</th>
-                                    <th class="p-4">Model</th>
-                                    <th class="p-4">HM</th>
-                                    <th class="p-4">Penugasan Mekanik</th>
+                                    <th class="p-3">
+                                        <div>Kode Unit</div>
+                                        <input type="text" id="col-filter-unassigned-hull" oninput="window.scheduleRender()" placeholder="Filter Hull..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-blue-500">
+                                    </th>
+                                    <th class="p-3">
+                                        <div>Serial Number</div>
+                                        <input type="text" id="col-filter-unassigned-sn" oninput="window.scheduleRender()" placeholder="Filter SN..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-blue-500">
+                                    </th>
+                                    <th class="p-3">
+                                        <div>Model</div>
+                                        <input type="text" id="col-filter-unassigned-model" oninput="window.scheduleRender()" placeholder="Filter Model..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-blue-500">
+                                    </th>
+                                    <th class="p-3">
+                                        <div>HM</div>
+                                        <input type="text" id="col-filter-unassigned-hm" oninput="window.scheduleRender()" placeholder="Filter HM..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-blue-500">
+                                    </th>
+                                    <th class="p-3">
+                                        <div>Pilih & Penugasan Mekanik</div>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody id="unassigned-units-table-body" class="divide-y divide-slate-800/60 font-medium">
@@ -1439,31 +1453,81 @@
             }).join('');
         };
 
+        window.assignMechanicToUnit = function(unitId) {
+            const selectEl = document.getElementById(`assign-mech-${unitId}`);
+            if (!selectEl) return;
+            const mechId = selectEl.value;
+            if (!mechId) {
+                window.showToast("Harap pilih mekanik terlebih dahulu!", "error");
+                return;
+            }
+            window.db.collection("excavators").doc(unitId).set({
+                assignedMechanicId: mechId,
+                isSync: true,
+                lastUpdated: Date.now()
+            }, { merge: true }).then(() => {
+                window.showToast(`✅ Berhasil menugaskan mekanik ${mechId} ke unit ${unitId}`, "success");
+            }).catch(err => {
+                console.error("Error assigning mechanic:", err);
+                window.showToast(`Gagal menugaskan mekanik: ${err.message}`, "error");
+            });
+        };
+
         window.renderUnassignedUnitsTable = function() {
             const tbody = document.getElementById('unassigned-units-table-body');
             if(!tbody) return;
+
+            const filterHull = (document.getElementById('col-filter-unassigned-hull')?.value || '').toLowerCase().trim();
+            const filterSn = (document.getElementById('col-filter-unassigned-sn')?.value || '').toLowerCase().trim();
+            const filterModel = (document.getElementById('col-filter-unassigned-model')?.value || '').toLowerCase().trim();
+            const filterHm = (document.getElementById('col-filter-unassigned-hm')?.value || '').toLowerCase().trim();
 
             const fleet = (window.dbState.excavators || []).map(d => ({
                 ...d,
                 hullNumber: d.hullNumber || d.id
             })).filter(f => (f.hullNumber || '').trim() !== '');
 
-            const unassignedUnits = fleet.filter(f => window.isUnitUnassigned(f));
+            const users = window.dbState.users || [];
+            const mechanics = users.filter(u => (u.role || '').toUpperCase() === 'MECHANIC');
+
+            const unassignedUnits = fleet.filter(f => window.isUnitUnassigned(f)).filter(f => {
+                const hull = (f.hullNumber || f.id || '').toLowerCase();
+                const sn = (f.serialNumber || '-').toLowerCase();
+                const model = (`${f.brand || ''} ${f.model || ''}`).toLowerCase();
+                const hm = String(f.currentHM || 0);
+
+                if (filterHull && !hull.includes(filterHull)) return false;
+                if (filterSn && !sn.includes(filterSn)) return false;
+                if (filterModel && !model.includes(filterModel)) return false;
+                if (filterHm && !hm.includes(filterHm)) return false;
+
+                return true;
+            });
 
             if(unassignedUnits.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-500">Seluruh unit armada telah memiliki mekanik.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-500">Seluruh unit armada telah memiliki mekanik atau tidak ada yang cocok.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = unassignedUnits.map(f => {
                 const hull = f.hullNumber || f.id;
+                const mechanicSelect = `
+                    <div class="flex items-center gap-2">
+                        <select id="assign-mech-${hull}" class="bg-slate-950 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-bold focus:outline-none focus:border-blue-500 cursor-pointer">
+                            <option value="">-- Pilih Mekanik --</option>
+                            ${mechanics.map(m => `<option value="${m.username || m.id}">${m.username || m.id} (${m.area || 'General'})</option>`).join('')}
+                        </select>
+                        <button onclick="window.assignMechanicToUnit('${hull}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] rounded-lg transition cursor-pointer">Assign</button>
+                    </div>
+                `;
+
                 return `
                     <tr class="hover:bg-slate-800/40 transition">
                         <td class="p-4 font-bold text-amber-400">${hull}</td>
                         <td class="p-4 text-emerald-400 font-mono font-bold">${f.serialNumber || '-'}</td>
                         <td class="p-4 text-white">${f.brand || ''} ${f.model || ''}</td>
                         <td class="p-4 font-bold text-emerald-400">${f.currentHM || 0} HM</td>
-                        <td class="p-4 text-red-400 font-bold">Belum Ditugaskan</td>
+                        <td class="p-4">${mechanicSelect}</td>
                     </tr>
                 `;
             }).join('');
