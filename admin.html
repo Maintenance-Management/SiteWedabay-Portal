@@ -1054,6 +1054,10 @@
                     </div>
                     <div class="flex items-center space-x-3">
                         <input type="text" id="search-users" oninput="window.scheduleRender()" placeholder="🔍 Cari username / role / area..." class="px-3 py-2 bg-slate-900 border border-slate-800 text-white text-xs rounded-xl focus:outline-none focus:border-purple-500 w-64 shadow">
+                        <button onclick="window.forceLogoutAllUsers()" class="px-3.5 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-xl shadow flex items-center gap-1.5 transition cursor-pointer" title="Paksa logout seluruh user yang sedang online">
+                            <i class="fa-solid fa-power-off text-sm"></i>
+                            <span>Force Logout Semua User</span>
+                        </button>
                         <button onclick="window.openAddUserModal()" class="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl shadow flex items-center gap-1.5 transition cursor-pointer">
                             <i class="fa-solid fa-user-plus text-sm"></i>
                             <span>Tambah User Baru</span>
@@ -1088,6 +1092,7 @@
                                             <option value="KM15">KM15</option>
                                         </select>
                                     </th>
+                                    <th class="p-3">Versi Aplikasi</th>
                                     <th class="p-3 text-center">Aksi</th>
                                 </tr>
                             </thead>
@@ -2365,17 +2370,24 @@
             });
 
             if(users.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-500">Tidak ada user yang cocok.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-500">Tidak ada user yang cocok.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = users.map(u => {
                 const username = u.username || u.id;
+                const ver = u.appVersion || u.version || '-';
+                const verBadge = ver === '11.0.0' ?
+                    `<span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">v${ver} (Terbaru)</span>` :
+                    ver === '-' ? `<span class="text-slate-500 text-xs">-</span>` :
+                    `<span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-red-500/20 text-red-400 border border-red-500/30">v${ver} (Belum Update)</span>`;
+
                 return `
                     <tr class="hover:bg-slate-800/40 transition">
                         <td class="p-4 font-bold text-white">${username}</td>
                         <td class="p-4 font-semibold text-amber-400">${u.role || 'MECHANIC'}</td>
                         <td class="p-4 text-blue-400 font-semibold">${u.area || 'Smelter'}</td>
+                        <td class="p-4">${verBadge}</td>
                         <td class="p-4 text-center">
                             <button onclick="window.deleteUser('${username}')" class="text-red-400 hover:text-red-300 font-bold text-xs">🗑️ Hapus</button>
                         </td>
@@ -2392,6 +2404,34 @@
                         window.scheduleRender();
                     });
             }
+        };
+
+        window.forceLogoutAllUsers = function() {
+            if (!confirm("⚠️ PERINGATAN: Apakah Anda yakin ingin memaksa LOGOUT SEMUA USER yang sedang online? Tindakan ini akan mengeluarkan seluruh mekanik dari aplikasi.")) return;
+            window.showToast("Mengirim perintah Force Logout ke semua user...", "info");
+            const users = window.dbState.users || [];
+            if (users.length === 0) {
+                window.showToast("Tidak ada user terdaftar.", "error");
+                return;
+            }
+            const batch = window.db.batch();
+            users.forEach(u => {
+                const username = u.username || u.id;
+                if (username && username.toLowerCase() !== 'admin') {
+                    const docRef = window.db.collection("commands").doc();
+                    batch.set(docRef, {
+                        targetUser: username,
+                        type: "FORCE_LOGOUT",
+                        timestamp: Date.now()
+                    });
+                }
+            });
+            batch.commit().then(() => {
+                window.showToast("✅ Perintah Force Logout berhasil dikirim ke semua user!", "success");
+            }).catch(err => {
+                console.error("Error force logout:", err);
+                window.showToast("Gagal mengirim perintah: " + err.message, "error");
+            });
         };
 
         window.openAddUserModal = function() {
