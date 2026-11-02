@@ -370,6 +370,10 @@
                                         <input type="text" id="col-filter-late-model" oninput="window.scheduleRender()" placeholder="Filter Model..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-blue-500">
                                     </th>
                                     <th class="p-3">
+                                        <div>Tgl Update HM</div>
+                                        <input type="text" id="col-filter-late-update-date" oninput="window.scheduleRender()" placeholder="Filter Tgl Upd..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-blue-500">
+                                    </th>
+                                    <th class="p-3">
                                         <div>HM Saat Ini</div>
                                         <input type="text" id="col-filter-late-hm" oninput="window.scheduleRender()" placeholder="Filter HM..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-blue-500">
                                     </th>
@@ -379,7 +383,7 @@
                                     </th>
                                     <th class="p-3">
                                         <div>HM Servis</div>
-                                        <input type="text" id="col-filter-late-s-hm" oninput="window.scheduleRender()" placeholder="Filter HM Svc..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-blue-500">
+                                        <input type="text" id="col-filter-late-s-hm" oninput="window.scheduleRender()" placeholder="Filter HM Srv..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-blue-500">
                                     </th>
                                     <th class="p-3">
                                         <div>Tipe Servis</div>
@@ -424,6 +428,10 @@
                                         <input type="text" id="col-filter-due-model" oninput="window.scheduleRender()" placeholder="Filter Model..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-blue-500">
                                     </th>
                                     <th class="p-3">
+                                        <div>Tgl Update HM</div>
+                                        <input type="text" id="col-filter-due-update-date" oninput="window.scheduleRender()" placeholder="Filter Tgl Upd..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-blue-500">
+                                    </th>
+                                    <th class="p-3">
                                         <div>HM Saat Ini</div>
                                         <input type="text" id="col-filter-due-hm" oninput="window.scheduleRender()" placeholder="Filter HM..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-blue-500">
                                     </th>
@@ -437,7 +445,7 @@
                                     </th>
                                     <th class="p-3">
                                         <div>HM Servis</div>
-                                        <input type="text" id="col-filter-due-s-hm" oninput="window.scheduleRender()" placeholder="Filter HM Svc..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-blue-500">
+                                        <input type="text" id="col-filter-due-s-hm" oninput="window.scheduleRender()" placeholder="Filter HM Srv..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-blue-500">
                                     </th>
                                     <th class="p-3">
                                         <div>Tipe Servis</div>
@@ -853,6 +861,39 @@
             return { dateStr, typeStr, hmStr: hmVal, mechStr: mechStr };
         };
 
+        window.getUnitLastHMDateStr = function(unit, history) {
+            if (!unit) return 'Belum Update';
+
+            const timestamps = [];
+
+            if (unit.lastHMUpdateDate) {
+                let parsed = window.parseDateRobustlyJS ? window.parseDateRobustlyJS(unit.lastHMUpdateDate) : null;
+                if (parsed) timestamps.push(parsed.getTime());
+            }
+
+            const hull = unit.hullNumber || unit.id;
+            if (history && history.length > 0 && hull) {
+                const unitHistory = history.filter(h => (h.hullNumber || h.id) === hull);
+                unitHistory.forEach(h => {
+                    const hDate = window.parseDateRobustlyJS ? window.parseDateRobustlyJS(h.date || h.timestamp) : null;
+                    if (hDate) timestamps.push(hDate.getTime());
+                });
+            }
+
+            if (timestamps.length > 0) {
+                const maxTs = Math.max(...timestamps);
+                if (maxTs > 86400000) {
+                    return new Date(maxTs).toLocaleDateString('id-ID');
+                }
+            }
+
+            if (unit.lastHMUpdateDate && typeof unit.lastHMUpdateDate === 'string' && unit.lastHMUpdateDate.trim() !== '') {
+                return unit.lastHMUpdateDate.trim();
+            }
+
+            return 'Belum Update';
+        };
+
         window.openSingleUnitModal = function(unitId) {
             document.getElementById('single-unit-doc-id').value = unitId || '';
 
@@ -1244,17 +1285,19 @@
             tbody.innerHTML = lateUnits.map(u => {
                 const hull = u.hullNumber || u.id;
                 const sInfo = window.getUnitLastServiceInfo(u, history);
+                const lastHMDateStr = window.getUnitLastHMDateStr(u, history);
 
                 return `
                     <tr class="hover:bg-slate-800/40 transition">
                         <td class="p-4 font-bold text-amber-400">${hull}</td>
                         <td class="p-4 text-emerald-400 font-mono font-bold">${u.serialNumber || '-'}</td>
                         <td class="p-4 text-white">${u.brand || ''} ${u.model || ''}</td>
+                        <td class="p-4 text-cyan-400 font-mono">${lastHMDateStr}</td>
                         <td class="p-4 font-bold text-emerald-400">${u.currentHM || 0} HM</td>
                         <td class="p-4 text-slate-300">${sInfo.dateStr}</td>
                         <td class="p-4 font-bold text-blue-400">${sInfo.hmStr}</td>
                         <td class="p-4 text-purple-400 font-semibold">${sInfo.typeStr}</td>
-                        <td class="p-4 text-indigo-400 font-semibold">${sInfo.mechStr}</td>
+                        <td class="p-4 text-indigo-400 font-semibold">${u.assignedMechanicId || '-'}</td>
                         <td class="p-4 text-center">
                             <button onclick="window.openSingleUnitModal('${hull}')" class="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 rounded-lg text-[11px] font-bold transition mr-1 cursor-pointer">Edit</button>
                             <button onclick="window.deleteUnit('${hull}')" class="px-2.5 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-[11px] font-bold transition cursor-pointer">Hapus</button>
@@ -1318,18 +1361,20 @@
             tbody.innerHTML = dueUnits.map(u => {
                 const hull = u.hullNumber || u.id;
                 const sInfo = window.getUnitLastServiceInfo(u, history);
+                const lastHMDateStr = window.getUnitLastHMDateStr(u, history);
 
                 return `
                     <tr class="hover:bg-slate-800/40 transition">
                         <td class="p-4 font-bold text-amber-400">${hull}</td>
                         <td class="p-4 text-emerald-400 font-mono font-bold">${u.serialNumber || '-'}</td>
                         <td class="p-4 text-white">${u.brand || ''} ${u.model || ''}</td>
+                        <td class="p-4 text-cyan-400 font-mono">${lastHMDateStr}</td>
                         <td class="p-4 font-bold text-emerald-400">${u.currentHM || 0} HM</td>
                         <td class="p-4 font-bold text-amber-400">${u.nextServiceTargetHM || 500} HM</td>
                         <td class="p-4 text-slate-300">${sInfo.dateStr}</td>
                         <td class="p-4 font-bold text-blue-400">${sInfo.hmStr}</td>
                         <td class="p-4 text-purple-400 font-semibold">${sInfo.typeStr}</td>
-                        <td class="p-4 text-indigo-400 font-semibold">${sInfo.mechStr}</td>
+                        <td class="p-4 text-indigo-400 font-semibold">${u.assignedMechanicId || '-'}</td>
                         <td class="p-4 text-center">
                             <button onclick="window.openSingleUnitModal('${hull}')" class="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 rounded-lg text-[11px] font-bold transition mr-1 cursor-pointer">Edit</button>
                             <button onclick="window.deleteUnit('${hull}')" class="px-2.5 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-[11px] font-bold transition cursor-pointer">Hapus</button>

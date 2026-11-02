@@ -865,6 +865,10 @@
                                         <input type="text" id="col-filter-late-model" oninput="window.scheduleRender()" placeholder="Filter Model..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-amber-500">
                                     </th>
                                     <th class="p-3">
+                                        <div>Tgl Update HM</div>
+                                        <input type="text" id="col-filter-late-update-date" oninput="window.scheduleRender()" placeholder="Filter Tgl Upd..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-amber-500">
+                                    </th>
+                                    <th class="p-3">
                                         <div>HM</div>
                                         <input type="text" id="col-filter-late-hm" oninput="window.scheduleRender()" placeholder="Filter HM..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-amber-500">
                                     </th>
@@ -923,16 +927,16 @@
                                         <input type="text" id="col-filter-due-model" oninput="window.scheduleRender()" placeholder="Filter Model..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-amber-500">
                                     </th>
                                     <th class="p-3">
+                                        <div>Tgl Update HM</div>
+                                        <input type="text" id="col-filter-due-update-date" oninput="window.scheduleRender()" placeholder="Filter Tgl Upd..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-amber-500">
+                                    </th>
+                                    <th class="p-3">
                                         <div>HM Aktual</div>
                                         <input type="text" id="col-filter-due-hm" oninput="window.scheduleRender()" placeholder="Filter HM..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-amber-500">
                                     </th>
                                     <th class="p-3">
-                                        <div>Target HM</div>
+                                        <div>Target HM Service Berikutnya</div>
                                         <input type="text" id="col-filter-due-target" oninput="window.scheduleRender()" placeholder="Filter Target..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-amber-500">
-                                    </th>
-                                    <th class="p-3">
-                                        <div>Sisa HM</div>
-                                        <input type="text" id="col-filter-due-remaining" oninput="window.scheduleRender()" placeholder="Filter Sisa..." class="mt-1.5 w-full bg-slate-900 border border-slate-800 text-white text-[11px] rounded-lg px-2 py-1 font-normal normal-case focus:outline-none focus:border-amber-500">
                                     </th>
                                     <th class="p-3">
                                         <div>Tanggal Terakhir Service</div>
@@ -2005,6 +2009,7 @@
             const filterType = (document.getElementById('col-filter-late-type')?.value || '').toLowerCase().trim();
             const filterDelay = (document.getElementById('col-filter-late-delay')?.value || '').toLowerCase().trim();
             const filterMech = (document.getElementById('col-filter-late-mech')?.value || '').toLowerCase().trim();
+            const filterUpdateDate = (document.getElementById('col-filter-late-update-date')?.value || '').toLowerCase().trim();
 
             const fleet = (window.dbState.excavators || []).map(d => ({
                 ...d,
@@ -2032,6 +2037,7 @@
                 const typeStr = sInfo.typeStr.toLowerCase();
                 const delayStr = ">30 hari telat".toLowerCase();
                 const mech = (f.assignedMechanicId || '-').toLowerCase();
+                const updateDateStr = (f.lastHMUpdateDate || '-').toLowerCase();
 
                 if (filterHull && !hull.includes(filterHull)) return false;
                 if (filterSn && !sn.includes(filterSn)) return false;
@@ -2042,28 +2048,30 @@
                 if (filterType && !typeStr.includes(filterType)) return false;
                 if (filterDelay && !delayStr.includes(filterDelay)) return false;
                 if (filterMech && !mech.includes(filterMech)) return false;
+                if (filterUpdateDate && !updateDateStr.includes(filterUpdateDate)) return false;
 
                 return true;
             });
 
             if(lateUnits.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-slate-500">Tidak ada unit garansi yang telat servis (>30H).</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="11" class="p-6 text-center text-slate-500">Tidak ada unit garansi yang telat servis (>30H).</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = lateUnits.map(f => {
                 const hull = f.hullNumber || f.id;
                 const sInfo = window.getUnitLastServiceInfo(f, history);
+                const lastHMDateStr = window.getUnitLastHMDateStr(f, history);
                 return `
                     <tr class="hover:bg-slate-800/40 transition">
                         <td class="p-4 font-bold text-amber-400">${hull}</td>
                         <td class="p-4 text-emerald-400 font-mono font-bold">${f.serialNumber || '-'}</td>
                         <td class="p-4 text-white">${f.brand || ''} ${f.model || ''}</td>
+                        <td class="p-4 text-cyan-400 font-mono">${lastHMDateStr}</td>
                         <td class="p-4 font-bold text-emerald-400">${f.currentHM || 0} HM</td>
                         <td class="p-4 text-slate-300 font-semibold">${sInfo.dateStr}</td>
                         <td class="p-4 text-emerald-400 font-bold">${sInfo.hmStr}</td>
                         <td class="p-4 text-blue-400 font-bold">${sInfo.typeStr}</td>
-                        <td class="p-4 text-red-400 font-extrabold">>30 Hari Telat</td>
                         <td class="p-4 text-blue-400 font-semibold">${f.assignedMechanicId || '-'}</td>
                         <td class="p-4 text-center">
                             <div class="flex items-center justify-center gap-2">
@@ -2090,6 +2098,7 @@
             const filterLastHm = (document.getElementById('col-filter-due-last-hm')?.value || '').toLowerCase().trim();
             const filterType = (document.getElementById('col-filter-due-type')?.value || '').toLowerCase().trim();
             const filterMech = (document.getElementById('col-filter-due-mech')?.value || '').toLowerCase().trim();
+            const filterUpdateDate = (document.getElementById('col-filter-due-update-date')?.value || '').toLowerCase().trim();
 
             const fleet = (window.dbState.excavators || []).map(d => ({
                 ...d,
@@ -2110,6 +2119,7 @@
                 const lastHmStr = sInfo.hmStr.toLowerCase();
                 const typeStr = sInfo.typeStr.toLowerCase();
                 const mech = (f.assignedMechanicId || '-').toLowerCase();
+                const updateDateStr = (f.lastHMUpdateDate || '-').toLowerCase();
 
                 if (filterHull && !hull.includes(filterHull)) return false;
                 if (filterSn && !sn.includes(filterSn)) return false;
@@ -2121,12 +2131,13 @@
                 if (filterLastHm && !lastHmStr.includes(filterLastHm)) return false;
                 if (filterType && !typeStr.includes(filterType)) return false;
                 if (filterMech && !mech.includes(filterMech)) return false;
+                if (filterUpdateDate && !updateDateStr.includes(filterUpdateDate)) return false;
 
                 return true;
             });
 
             if(dueUnits.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="11" class="p-6 text-center text-slate-500">Tidak ada unit garansi yang mendekati / jatuh tempo HM.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="12" class="p-6 text-center text-slate-500">Tidak ada unit garansi yang mendekati / jatuh tempo HM.</td></tr>`;
                 return;
             }
 
@@ -2134,15 +2145,16 @@
                 const hull = f.hullNumber || f.id;
                 const remaining = (f.nextServiceTargetHM - f.currentHM).toFixed(1);
                 const sInfo = window.getUnitLastServiceInfo(f, history);
+                const lastHMDateStr = window.getUnitLastHMDateStr(f, history);
 
                 return `
                     <tr class="hover:bg-slate-800/40 transition">
                         <td class="p-4 font-bold text-amber-400">${hull}</td>
                         <td class="p-4 text-emerald-400 font-mono font-bold">${f.serialNumber || '-'}</td>
                         <td class="p-4 text-white">${f.brand || ''} ${f.model || ''}</td>
+                        <td class="p-4 text-cyan-400 font-mono">${lastHMDateStr}</td>
                         <td class="p-4 font-bold text-emerald-400">${f.currentHM || 0} HM</td>
                         <td class="p-4 text-slate-300 font-bold">${f.nextServiceTargetHM || 0} HM</td>
-                        <td class="p-4 text-amber-400 font-extrabold">Sisa ${remaining} HM</td>
                         <td class="p-4 text-slate-300 font-semibold">${sInfo.dateStr}</td>
                         <td class="p-4 text-emerald-400 font-bold">${sInfo.hmStr}</td>
                         <td class="p-4 text-blue-400 font-bold">${sInfo.typeStr}</td>
