@@ -614,6 +614,14 @@
                     <span id="badge-due-hm-count" class="px-2 py-0.5 text-[10px] font-extrabold bg-amber-500 text-slate-950 rounded-full">0</span>
                 </button>
 
+                <button onclick="window.switchTab('breakdown-standby')" id="nav-breakdown-standby" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800/80 hover:text-white transition">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-triangle-exclamation w-4 text-amber-500 text-center"></i>
+                        <span>Armada Breakdown &amp; Standby</span>
+                    </div>
+                    <span id="badge-breakdown-standby-count" class="px-2 py-0.5 text-[10px] font-extrabold bg-amber-600 text-white rounded-full">0</span>
+                </button>
+
                 <p class="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest pt-3 mb-2">Master Data</p>
 
                 <button onclick="window.switchTab('fleet')" id="nav-fleet" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800/80 hover:text-white transition">
@@ -1933,6 +1941,19 @@
             }).catch(err => {
                 console.error("Error assigning mechanic:", err);
                 window.showToast(`Gagal menugaskan mekanik: ${err.message}`, "error");
+            });
+        };
+
+        window.updateWarrantyHandling = function(unitId, value) {
+            window.db.collection("excavators").doc(unitId).set({
+                warrantyHandlingType: value,
+                isSync: true,
+                lastUpdated: Date.now()
+            }, { merge: true }).then(() => {
+                window.showToast(`✅ Berhasil memperbarui tipe penanganan garansi unit ${unitId}`, "success");
+            }).catch(err => {
+                console.error("Error updating warranty handling:", err);
+                window.showToast(`Gagal memperbarui tipe penanganan: ${err.message}`, "error");
             });
         };
 
